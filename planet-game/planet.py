@@ -24,6 +24,17 @@ class Planet:
         self.data["velocity"]["x"] *= (1.0 - instantaniousDrag)
         self.data["velocity"]["y"] *= (1.0 - instantaniousDrag)
 
+    def collides(self, other):
+        selfNextX = self.data["position"]["x"] + self.data["velocity"]["x"]
+        selfNextY = self.data["position"]["y"] + self.data["velocity"]["y"]
+        otherNextX = other.data["position"]["x"] + other.data["velocity"]["x"]
+        otherNextY = other.data["position"]["y"] + other.data["velocity"]["y"]
+
+        centerDistance = self.data["radius"] + other.data["radius"]
+
+        distanceBetween = math.pow(abs((selfNextX - otherNextX)), 2) - math.pow(abs((selfNextY - otherNextY)), 2)
+        if distanceBetween < centerDistance:
+            return True
 
     def render(self, surface):
         pygame.draw.circle(surface, (0,0,0), (self.data["position"]["x"],self.data["position"]["y"]), self.data["radius"])
