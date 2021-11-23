@@ -23,6 +23,14 @@ class Planet:
         instantaniousDrag = self.drag()
         self.data["velocity"]["x"] *= (1.0 - instantaniousDrag)
         self.data["velocity"]["y"] *= (1.0 - instantaniousDrag)
+        #if notInScreen:
+         #   self.warp()
+         
+    def warp():
+        #pick random point and random velocity inside canvas
+        #do math to figure out where that would have had to start outside canvas
+        #Needs to check if relocating to be colliding, pick new location if colliding
+        pass
 
     def collides(self, other):
         selfNextX = self.data["position"]["x"] + self.data["velocity"]["x"]
@@ -36,8 +44,11 @@ class Planet:
         if distanceBetween < centerDistance:
             return True
 
+    def doCollision(self, other): #TODO
+        pass
+
     def render(self, surface):
-        pygame.draw.circle(surface, (0,0,0), (self.data["position"]["x"],self.data["position"]["y"]), sbelf.data["radius"])
+        pygame.draw.circle(surface, (0,0,0), (self.data["position"]["x"],self.data["position"]["y"]), self.data["radius"])
 
     @classmethod
     def generatePlanets(cls, count):
