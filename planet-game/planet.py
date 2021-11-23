@@ -5,10 +5,25 @@ import setup as SETUP
 
 class Planet:
     planets = []
+    closePlanets = []
     def __init__(self, data):
         self.data = data
         self.dragCoefficent = SETUP.DRAG
         Planet.planets.append(self)
+   
+    #@classmethod
+    #def checkWhosColliding(cls):
+    #    for i in Planet.planets:
+    #        if i != len(Planet.planets) - 1:
+    #            for j in range(i + 1, len(Planet.planets) - 1):
+    #              i.collides(Planet.planets[j])
+    def closePlanets(self):
+        for i in Planet.planets:
+            if i != len(Planet.planets) - 1:
+                for j in range(i + 1, len(Planet.planets) - 1):
+                  #distance formula
+                  closePlanets.append
+        
 
     def drag(self):
         speedsq = math.pow(self.data["velocity"]["x"], 2) + math.pow(self.data["velocity"]["x"], 2)
