@@ -37,7 +37,7 @@ class Planet:
             return True
 
     def render(self, surface):
-        pygame.draw.circle(surface, (0,0,0), (self.data["position"]["x"],self.data["position"]["y"]), self.data["radius"])
+        pygame.draw.circle(surface, (0,0,0), (self.data["position"]["x"],self.data["position"]["y"]), sbelf.data["radius"])
 
     @classmethod
     def generatePlanets(cls, count):
