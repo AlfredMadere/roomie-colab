@@ -7,10 +7,11 @@ pygame.init()
 
 timer_event = pygame.USEREVENT + 1
 pygame.time.set_timer(timer_event, math.floor(1000/SETUP.FPS))
-Planet.generatePlanets(4)
+Planet.generatePlanets(8)
 
 def draw_window():
     SETUP.WIN.fill(SETUP.WHITE)
+    Planet.doCollisions()
     Planet.updatePositions()
     for planet in Planet.planets:
         planet.render(SETUP.WIN)
