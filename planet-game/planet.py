@@ -11,16 +11,14 @@ class Planet:
     def __init__(self, data):
         self.data = data
         self.dragCoefficent = SETUP.DRAG
-        self.data["mass"] = (4/3)*(math.pi*self.data["radius"]**2)
+        self.data["mass"] = (4/3)*(math.pi)*(self.data["radius"]**2)
         Planet.planets.append(self)
    
     @classmethod
     def doCollisions(cls):
        for i, planet in enumerate(Planet.planets):
-           print("firs planet", planet)
            if i != len(Planet.planets) - 1:
                for otherPlanet in Planet.planets[i+1:]:
-                   print("other planet", otherPlanet)
                    if planet.collides(otherPlanet):
                        print("had a colide mother fuker")
                        planet.doCollision(otherPlanet)
@@ -38,13 +36,13 @@ class Planet:
         ny = (self.data["position"]["y"] - other.data["position"]["y"]) / distanceBetween
         #p is derived from manipulation of Pinitial = Pfinal and KEinitial = KEfinal. It is just a value that relates the velocities of the circles to thier masses
         # p = 2(self.v*n - other.v*n) / ( m1 + m2)
-        p = 2 * ((self.data["velocity"]["x"] * nx + self.data["velocity"]["y"] * ny) - ((other.data["velocity"]["x"] * nx + other.data["velocity"]["y"] * ny))) / (self.data["mass"] + other.data["mass"])
+        p = 2 * ((((self.data["velocity"]["x"] - other.data["velocity"]["x"]) * nx) + ((self.data["velocity"]["y"] - other.data["velocity"]["y"]) * ny)))/(1/self.data["mass"] + 1/other.data["mass"])
         #self.vf = initialVelocity - p*mass*unitVector
         #other.vf = initialVelocity + p*mass*unitVector
-        vxSelfFinal = self.data["velocity"]["x"] - p * self.data["mass"] * nx
-        vySelfFinal = self.data["velocity"]["y"] - p * self.data["mass"] * ny
-        vxOtherFinal = other.data["velocity"]["x"] + p * other.data["mass"] * nx
-        vyOtherFinal = other.data["velocity"]["y"] + p * other.data["mass"] * ny
+        vxSelfFinal = self.data["velocity"]["x"] - (p / self.data["mass"]) * nx
+        vySelfFinal = self.data["velocity"]["y"] - (p / self.data["mass"]) * ny
+        vxOtherFinal = other.data["velocity"]["x"] + (p / other.data["mass"]) * nx
+        vyOtherFinal = other.data["velocity"]["y"] + (p / other.data["mass"]) * ny
         #set the values
         self.data["velocity"]["x"] = vxSelfFinal
         self.data["velocity"]["y"] = vySelfFinal
@@ -64,7 +62,8 @@ class Planet:
     @classmethod
     def distanceBetweenSquared(cls, planet1, planet2):
         planet1x = planet1.data["position"]["x"]
-        return math.pow(planet1.data["position"]["x"] - planet2.data["position"]["x"], 2) + math.pow(planet1.data["position"]["y"] - planet2.data["position"]["y"], 2)
+        result = (planet1.data["position"]["x"] - planet2.data["position"]["x"])**2 + (planet1.data["position"]["y"] - planet2.data["position"]["y"])**2        
+        return result
 
     def updatePosition(self):
         #update x pos
@@ -90,14 +89,12 @@ class Planet:
         otherNextX = other.data["position"]["x"] + other.data["velocity"]["x"]
         otherNextY = other.data["position"]["y"] + other.data["velocity"]["y"]
 
-        centerDistance = self.data["radius"] + other.data["radius"]
+        centerDistanceSquared = (self.data["radius"] + other.data["radius"])**2
 
-        distanceBetween = math.pow(abs((selfNextX - otherNextX)), 2) - math.pow(abs((selfNextY - otherNextY)), 2)
-        if distanceBetween < centerDistance:
+        distanceBetween = (selfNextX - otherNextX)**2 + (selfNextY - otherNextY)**2 
+        #Planet.distanceBetweenSquared(self, other)
+        if distanceBetween < centerDistanceSquared:
             return True
-
-    def doCollision(self, other): #TODO
-        pass
 
     def render(self, surface):
         pygame.draw.circle(surface, (0,0,0), (self.data["position"]["x"],self.data["position"]["y"]), self.data["radius"])
@@ -110,8 +107,53 @@ class Planet:
             ypos = random.randrange(0, SETUP.HEIGHT)
             xvel = random.randrange(-SETUP.MAXSPEED, SETUP.MAXSPEED)
             yvel = random.randrange(-SETUP.MAXSPEED, SETUP.MAXSPEED)
-            Planet({"radius": 50, "position": {"x": xpos, "y": ypos}, "velocity": {"x": xvel, "y": yvel}})
+            r =  r1 = random.randrange(20, 100)
+            Planet({"radius": r, "position": {"x": xpos, "y": ypos}, "velocity": {"x": xvel, "y": yvel}})
             i+=1
+        
+    @classmethod
+    def generatePlanetsThatWillCollide(cls):
+
+        #random radii
+        r1 = random.randrange(20, 100)
+        r2 = random.randrange(20, 100)
+        #generate point of collision - center for now
+        cx = random.randrange(50, SETUP.WIDTH - 50)
+        cy = random.randrange(50, SETUP.HEIGHT - 50)
+        #pick random starting locations - only from the left and right for now 
+        sx1 = random.randint(-50, 0)
+        sx2 = random.randint(SETUP.WIDTH, SETUP.WIDTH+50)
+
+        sy1 = random.randint(0, SETUP.HEIGHT)
+        sy2 = random.randint(0, SETUP.HEIGHT)
+        
+        #distance from start point1 to collision location
+        dc1 = math.sqrt((cx - sx1)**2 + (cy - sy1)**2)
+
+        #distance from start point2 to collision location
+        dc2 = math.sqrt((cx - sx2)**2 + (cy - sy2)**2)
+
+        #random velocity within range for first planet - this will determine how fast the second planet has to move
+        v1mag = random.randrange(2, SETUP.MAXSPEED)
+        #time to collison d/r =t
+        timeToCollision = dc1/v1mag
+        #velocity that will make the planet2 arrive at collision site at the same time as planet1 
+        v2mag = dc2/timeToCollision
+        
+        #n is a unit vector from start point1 to collision
+        nx = (cx - sx1) / dc1
+        ny = (cy - sy1) / dc1
+        #a is a unit vector from start point2 to collison
+        ax = (cx - sx2) / dc2
+        ay = (cy - sy2) / dc2
+        #components of unit vector times magnitude of velocity give components of velocity
+        xvel1 = v1mag * nx
+        yvel1 = v1mag * ny
+        xvel2 = v2mag * ax
+        yvel2 = v2mag * ay
+
+        Planet({"radius": r1, "position": {"x": sx1, "y": sy1}, "velocity": {"x": xvel1, "y": yvel1}})
+        Planet({"radius": r2, "position": {"x": sx2, "y": sy2}, "velocity": {"x": xvel2, "y": yvel2}})
 
     @classmethod
     def updatePositions(cls):
