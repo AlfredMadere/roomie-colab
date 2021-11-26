@@ -78,12 +78,12 @@ class Planet:
             
          
     def warp(self):
-        choose = random.randint(0,1)
+        
         #random slope
         a = random.randint(-999,999)
         #random position point in middle half of canvas
-        finalPosX = random(0.25*SETUP.WIDTH, 0.75*SETUP.WIDTH)
-        finalPosY = random(0.25*SETUP.HEIGHT, 0.75*SETUP.HEIGHT)
+        finalPosX = random.randint(0.25*SETUP.WIDTH, 0.75*SETUP.WIDTH)
+        finalPosY = random.randint(0.25*SETUP.HEIGHT, 0.75*SETUP.HEIGHT)
         b = a*finalPosX + finalPosY
         
         #y-intercept of left x bound
@@ -91,56 +91,39 @@ class Planet:
         #y-intercept of right x bound
         y2 = -1*(a*1000 + b)
         #x-intercept of upper y bound
-        x1 = (100 - b)/a
+        if a == 0:
+            x1 = -900
+            x2 = -900
+        else:
+            x1 = (100 - b)/a
         #x-intercept of lower y bound
-        x2 = (-600 - b)/a
+            x2 = (-600 - b)/a
 
         #check to see which of the intercepts found above lie on the box 100px from the screen
         #lines will often have intercepts on both x or y bounds, so In a random order I
         #checked each bound on the outer box and if the conditionals were true I updated
         #the postition and velocity of the planet so it should re-enter the canvas
-        if choose == 0:
+       
             if(y1 >= 100 and y1<= 600):
                 self.data["position"]["x"] = -100
                 self.data["position"]["y"] = y1
-                self.data["velocity"]["x"] = math.cos(1/a)
-                self.data["velocity"]["y"] = math.sin(1/a)
+                self.data["velocity"]["x"] = random.randint(2,5)*math.cos(1/a)
+                self.data["velocity"]["y"] = random.randint(2,5)*math.sin(1/a) 
             elif(y2 >= 100 and y2<= 600):
                 self.data["position"]["x"] = 1000
                 self.data["position"]["y"] = y2
-                self.data["velocity"]["x"] = math.cos(1/a)
-                self.data["velocity"]["y"] = math.sin(1/a)
+                self.data["velocity"]["x"] = random.randint(2,5)*math.cos(1/a)
+                self.data["velocity"]["y"] = random.randint(2,5)*math.sin(1/a) 
             elif(x1 >= -100 and x1 <= 1000):
                 self.data["position"]["x"] = x1
                 self.data["position"]["y"] = -100
-                self.data["velocity"]["x"] = math.cos(1/a)
-                self.data["velocity"]["y"] = math.sin(1/a)
+                self.data["velocity"]["x"] = random.randint(2,5)*math.cos(1/a)
+                self.data["velocity"]["y"] = random.randint(2,5)*math.sin(1/a) 
             elif(x2 >= -100 and x2 <= 1000):
                 self.data["position"]["x"] = x2
                 self.data["position"]["y"] = 600
-                self.data["velocity"]["x"] = math.cos(1/a)
-                self.data["velocity"]["y"] = math.sin(1/a)
-        else:
-            if(y2 >= 100 and y2<= 600):
-                self.data["position"]["x"] = -100
-                self.data["position"]["y"] = y2
-                self.data["velocity"]["x"] = math.cos(1/a)
-                self.data["velocity"]["y"] = math.sin(1/a)
-            elif(y1 >= 100 and y1<= 600):
-                self.data["position"]["x"] = -100
-                self.data["position"]["y"] = y1
-                self.data["velocity"]["x"] = math.cos(1/a)
-                self.data["velocity"]["y"] = math.sin(1/a)
-            elif(x2 >= -100 and x2 <= 1000):
-                self.data["position"]["x"] = x2
-                self.data["position"]["y"] = 600 
-                self.data["velocity"]["x"] = math.cos(1/a)
-                self.data["velocity"]["y"] = math.sin(1/a)
-            elif(x1 >= -100 and x1 <= 1000):
-                self.data["position"]["x"] = x2
-                self.data["position"]["y"] = 600
-                self.data["velocity"]["x"] = math.cos(1/a)
-                self.data["velocity"]["y"] = math.sin(1/a) 
+                self.data["velocity"]["x"] = random.randint(2,5)*math.cos(1/a)
+                self.data["velocity"]["y"] = random.randint(2,5)*math.sin(1/a) 
 
     #Check if any planet fully leaves the screen
     #If planet leaves screen, call warp function
@@ -151,13 +134,14 @@ class Planet:
             posX = self.data["position"]["x"]
             posY = self.data["position"]["y"]
             rad = self.data["radius"]
-            if posX < (0 - rad) or posX > (SETUP.WIDTH + rad) or posY < (0 - rad) or posY > (SETUP.HEIGHT + rad):
+            if posX < (-201) or posX > (1101) or posY < (-201) or posY > (701):
                 self.warp()
-                for j in Planet.planets:
-                    if j == i:
-                        continue
-                    while(Planet.collides(Planet.planets[j])):
-                        Planet.planets[i].warp()
+                #for j in Planet.planets:
+                 #   if j == i:
+                  #      continue
+                   # other = Planet.planets[j]
+                    #while(Planet.collides(other)):
+                     #   Planet.planets[i].warp()
 
     def collides(self, other):
         selfNextX = self.data["position"]["x"] + self.data["velocity"]["x"]
