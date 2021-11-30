@@ -22,12 +22,25 @@ class Planet:
                    if planet.collides(otherPlanet):
                        print("had a colide mother fuker")
                        planet.doCollision(otherPlanet)
+    def velocity (self):
+        return math.sqrt(self.data["velocity"]["x"]**2 + self.data["velocity"]["y"]**2)
+
+    def momentum (self):
+        return self.velocity()*self.data["mass"]
+
+    def energy (self):
+        return (self.data["mass"]*self.velocity()**2)/2
     
     def doCollision(self, other):
         # I got lazy and got this formula from here: https://ericleong.me/research/circle-circle/
         #use these for testing with initial and final velocities to see if everything is conserved properly
         #totalEnergy = self.energy()+ other.energy() #write an energy method
         #totalMomentum = self.momentum() + other.momentum() #write a momentum method
+        pinitial1 = self.momentum()
+        pinitial2 = other.momentum()
+        pinitialtotal = pinitial1 + pinitial2
+        print("inital momentum " + str(pinitialtotal))
+
         distanceBetween = math.sqrt(Planet.distanceBetweenSquared(self, other))
         #n is a unit vector pointing from the center of self to the center of other at the moment they collide
         #This is an approximation because the circles will be a bit over lapping at this point (after all we detected that thier centers were closer than the sum of thier radii)
@@ -49,6 +62,10 @@ class Planet:
         other.data["velocity"]["x"] = vxOtherFinal
         other.data["velocity"]["y"] = vyOtherFinal
         
+        pfinal1 = self.momentum()
+        pfinal2 = other.momentum()
+        pfinaltotal = pfinal1 + pfinal2
+        print("final momentum " + str(pfinaltotal))
         #This lowkey is such a hack and we should change it, this is because they might still be inside each other after 1 redraw frame... and then it will look like they collided again and we will get weird shit happening
         while Planet.distanceBetweenSquared(self, other) < (self.data["radius"] + other.data["radius"])**2:
             self.updatePosition()
@@ -152,8 +169,8 @@ class Planet:
         xvel2 = v2mag * ax
         yvel2 = v2mag * ay
 
-        Planet({"radius": r1, "position": {"x": sx1, "y": sy1}, "velocity": {"x": xvel1, "y": yvel1}})
-        Planet({"radius": r2, "position": {"x": sx2, "y": sy2}, "velocity": {"x": xvel2, "y": yvel2}})
+        return [Planet({"radius": r1, "position": {"x": sx1, "y": sy1}, "velocity": {"x": xvel1, "y": yvel1}}),
+        Planet({"radius": r2, "position": {"x": sx2, "y": sy2}, "velocity": {"x": xvel2, "y": yvel2}})]
 
     @classmethod
     def updatePositions(cls):
