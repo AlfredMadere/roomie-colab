@@ -12,16 +12,34 @@ class Planet:
         self.data = data
         self.dragCoefficent = SETUP.DRAG
         self.data["mass"] = (4/3)*(math.pi)*(self.data["radius"]**2)
+        self.data["canCollide"] = True
         Planet.planets.append(self)
+
+    def notInEffectiveScreen(self):
+        #position is some distance from edge of screen
+        xOutOfRange = True if (self.data["position"]["x"] > SETUP.WIDTH + 200 ) or (self.data["position"]["x"] < 0 - 200) else False
+        yOutOfRange = True if (self.data["position"]["y"] > SETUP.HEIGHT + 200 ) or (self.data["position"]["y"] < 0 - 200) else False
+        
+        if xOutOfRange or yOutOfRange:
+            return True
    
     @classmethod
     def doCollisions(cls):
        for i, planet in enumerate(Planet.planets):
-           if i != len(Planet.planets) - 1:
+           if (i != len(Planet.planets) - 1) and planet.data["canCollide"]:
                for otherPlanet in Planet.planets[i+1:]:
-                   if planet.collides(otherPlanet):
+                   if planet.collides(otherPlanet) and otherPlanet.data["canCollide"]:
                        print("had a colide mother fuker")
                        planet.doCollision(otherPlanet)
+
+    def wouldBeColliding (self):
+        for otherPlanet in Planet.planets:
+            if self.collides(otherPlanet):
+                print("would collide if you created me")
+                return True
+            else:
+                return False
+
     def velocity (self):
         return math.sqrt(self.data["velocity"]["x"]**2 + self.data["velocity"]["y"]**2)
 
@@ -41,6 +59,7 @@ class Planet:
         pinitialtotal = pinitial1 + pinitial2
         print("inital momentum " + str(pinitialtotal))
 
+        #TODO fix this method so that energy and momentum are actually conserved and not "kinda conserved" right now the system can loose up to like 5% of its momentum in a collision
         distanceBetween = math.sqrt(Planet.distanceBetweenSquared(self, other))
         #n is a unit vector pointing from the center of self to the center of other at the moment they collide
         #This is an approximation because the circles will be a bit over lapping at this point (after all we detected that thier centers were closer than the sum of thier radii)
@@ -88,17 +107,56 @@ class Planet:
         #update y pos
         self.data["position"]["y"] += self.data["velocity"]["y"]
         #update x and y vel
-        instantaniousDrag = self.drag()
+        #instantaniousDrag = self.drag()
+        instantaniousDrag = 0
+
         self.data["velocity"]["x"] *= (1.0 - instantaniousDrag)
         self.data["velocity"]["y"] *= (1.0 - instantaniousDrag)
-        #if notInScreen:
-         #   self.warp()
-         
-    def warp():
-        #pick random point and random velocity inside canvas
-        #do math to figure out where that would have had to start outside canvas
-        #Needs to check if relocating to be colliding, pick new location if colliding
-        pass
+        if self.notInEffectiveScreen():
+            self.warp()
+
+    def warp(self):
+        self.data["canCollide"] = False
+
+        #generate point of pass through - center for now 
+        cx = random.randrange(50, SETUP.WIDTH - 50)
+        cy = random.randrange(50, SETUP.HEIGHT - 50)
+
+        sx = random.randint(-100, 0)
+        sy = random.randint(-100, SETUP.HEIGHT + 100)
+
+        self.data["position"]["x"] = sx 
+        self.data["position"]["y"] = sy
+        #this will find us a center location that does not collide with anything else
+        while self.wouldBeColliding():
+            #pick random starting location - only from the left and right for now 
+            sx = random.randint(-100, 0)
+            sy = random.randint(-100, SETUP.HEIGHT + 100)
+
+            self.data["position"]["x"] = sx 
+            self.data["position"]["y"] = sy
+
+        
+    
+        #distance from start point1 to pass through location
+        dc1 = math.sqrt((cx - sx)**2 + (cy - sy)**2)
+
+        #random velocity within range for planet 
+        v1mag = random.randrange(2, SETUP.MAXSPEED)
+    
+        #n is a unit vector from start start point to pass through point
+        nx = (cx - sx) / dc1
+        ny = (cy - sy) / dc1
+    
+        #components of unit vector times magnitude of velocity give components of velocity
+        xvel = v1mag * nx
+        yvel = v1mag * ny
+
+        self.data["velocity"]["x"] = xvel
+        self.data["velocity"]["y"] = yvel
+        self.data["canCollide"] = True
+
+
 
     def collides(self, other):
         selfNextX = self.data["position"]["x"] + self.data["velocity"]["x"]
@@ -134,7 +192,7 @@ class Planet:
         #random radii
         r1 = random.randrange(20, 100)
         r2 = random.randrange(20, 100)
-        #generate point of collision - center for now
+        #generate point of collision 
         cx = random.randrange(50, SETUP.WIDTH - 50)
         cy = random.randrange(50, SETUP.HEIGHT - 50)
         #pick random starting locations - only from the left and right for now 

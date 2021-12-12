@@ -27,3 +27,11 @@ class PlanetTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestSomething(unittest.TestCase):
+    def test_randothing(self):
+        self.assertEqual(func(true), True, "shoulda been true bitch")
+
+if __name__ == '__main__':
+    unittest.main()
