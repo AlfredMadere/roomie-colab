@@ -1,6 +1,8 @@
 import pygame
 import math
 import random
+
+from pygame.constants import CONTROLLER_AXIS_INVALID
 import setup as SETUP
 
 DENSITY = 1
@@ -9,36 +11,45 @@ class Planet:
     planets = []
     closePlanets = []
     def __init__(self, data):
+        #TODO: update so that there is no "data" attribute with all the data, that is stupid. Just make them all the data members, attributes of the class
         self.data = data
         self.dragCoefficent = SETUP.DRAG
         self.data["mass"] = (4/3)*(math.pi)*(self.data["radius"]**2)
         self.data["canCollide"] = True
+        self.data["color"] = (0,0,0)
         Planet.planets.append(self)
 
+
     def notInEffectiveScreen(self):
-        #position is some distance from edge of screen
-        xOutOfRange = True if (self.data["position"]["x"] > SETUP.WIDTH + 200 ) or (self.data["position"]["x"] < 0 - 200) else False
-        yOutOfRange = True if (self.data["position"]["y"] > SETUP.HEIGHT + 200 ) or (self.data["position"]["y"] < 0 - 200) else False
+        buffer = 200
+        xOutOfRange = True if (self.data["position"]["x"] > SETUP.WIDTH + buffer ) or (self.data["position"]["x"] < 0 -  buffer) else False
+        yOutOfRange = True if (self.data["position"]["y"] > SETUP.HEIGHT + buffer ) or (self.data["position"]["y"] < 0 - buffer) else False
         
         if xOutOfRange or yOutOfRange:
             return True
    
     @classmethod
     def doCollisions(cls):
-       for i, planet in enumerate(Planet.planets):
+        for i, planet in enumerate(Planet.planets):
            if (i != len(Planet.planets) - 1) and planet.data["canCollide"]:
                for otherPlanet in Planet.planets[i+1:]:
                    if planet.collides(otherPlanet) and otherPlanet.data["canCollide"]:
-                       print("had a colide mother fuker")
                        planet.doCollision(otherPlanet)
 
-    def wouldBeColliding (self):
+    def wouldBeCollidingSoon (self):
+        #detects if a planet is near another planet (not actually if it's colling soon)
+        #TODO: change name to nearOtherPlanet
         for otherPlanet in Planet.planets:
-            if self.collides(otherPlanet):
-                print("would collide if you created me")
-                return True
-            else:
-                return False
+            if self != otherPlanet:
+                if self.nearlyOverlaps(otherPlanet):
+                    print("would be *almost* overlapping if you created me")
+                    return True
+                else:
+                    return False
+
+    def nearlyOverlaps (self, other):
+        buffer = 50
+        return Planet.distanceBetweenSquared(self, other) < (self.data["radius"] + other.data["radius"] + buffer)**2 
 
     def velocity (self):
         return math.sqrt(self.data["velocity"]["x"]**2 + self.data["velocity"]["y"]**2)
@@ -50,14 +61,15 @@ class Planet:
         return (self.data["mass"]*self.velocity()**2)/2
     
     def doCollision(self, other):
+        #TODO:
+        '''Momentum (and probably energy) not being conserved, figure out what the fuck is wrong and fix it'''
         # I got lazy and got this formula from here: https://ericleong.me/research/circle-circle/
         #use these for testing with initial and final velocities to see if everything is conserved properly
-        #totalEnergy = self.energy()+ other.energy() #write an energy method
         #totalMomentum = self.momentum() + other.momentum() #write a momentum method
         pinitial1 = self.momentum()
         pinitial2 = other.momentum()
         pinitialtotal = pinitial1 + pinitial2
-        print("inital momentum " + str(pinitialtotal))
+        #print("inital momentum " + str(pinitialtotal))
 
         #TODO fix this method so that energy and momentum are actually conserved and not "kinda conserved" right now the system can loose up to like 5% of its momentum in a collision
         distanceBetween = math.sqrt(Planet.distanceBetweenSquared(self, other))
@@ -84,7 +96,7 @@ class Planet:
         pfinal1 = self.momentum()
         pfinal2 = other.momentum()
         pfinaltotal = pfinal1 + pfinal2
-        print("final momentum " + str(pfinaltotal))
+        #print("final momentum " + str(pfinaltotal))
         #This lowkey is such a hack and we should change it, this is because they might still be inside each other after 1 redraw frame... and then it will look like they collided again and we will get weird shit happening
         while Planet.distanceBetweenSquared(self, other) < (self.data["radius"] + other.data["radius"])**2:
             self.updatePosition()
@@ -97,8 +109,7 @@ class Planet:
     #Not taking the square root makes things run faster and usally we were gonna compare it to something else we took the square root of anyways.
     @classmethod
     def distanceBetweenSquared(cls, planet1, planet2):
-        planet1x = planet1.data["position"]["x"]
-        result = (planet1.data["position"]["x"] - planet2.data["position"]["x"])**2 + (planet1.data["position"]["y"] - planet2.data["position"]["y"])**2        
+        result = ((planet1.data["position"]["x"] - planet2.data["position"]["x"])**2 + (planet1.data["position"]["y"] - planet2.data["position"]["y"])**2)        
         return result
 
     def updatePosition(self):
@@ -112,32 +123,74 @@ class Planet:
 
         self.data["velocity"]["x"] *= (1.0 - instantaniousDrag)
         self.data["velocity"]["y"] *= (1.0 - instantaniousDrag)
-        if self.notInEffectiveScreen():
-            self.warp()
+
+        if self.notInEffectiveScreen() and not(self.gettingCloserToCenterOfScreen()):
+           self.warp()
+
+    def gettingCloserToCenterOfScreen(self):
+        #dot product of velocity vector and vector towards center
+        #if positive, getting closer to center, if negative, getting farther from center
+
+        #velocity vector
+        vx = self.data["velocity"]["x"]
+        vy = self.data["velocity"]["y"]
+        #vector towards center a
+        sx = self.data["position"]["x"]
+        sy = self.data["position"]["y"]
+        cx = SETUP.WIDTH/2
+        cy = SETUP.HEIGHT/2
+
+        ax = cx - sx
+        ay = cy - sy
+
+        #dot product vx * ax + vy *ay
+        dotProduct = vx * ax + vy * ay
+        return dotProduct > 0
+
+
+        
+    @classmethod
+    def generateRandomStart(cls):
+        #flip four sided dice, for which side the thing should start from
+        minDistanceFromEdge = 500
+        spawnableWidth = 1000
+        sideSelector = random.randint(0, 3)
+        if sideSelector == 0:
+            #left side
+            x = random.randint(-(minDistanceFromEdge + spawnableWidth), -minDistanceFromEdge)
+            y = random.randint(-(minDistanceFromEdge + spawnableWidth), SETUP.HEIGHT + minDistanceFromEdge + spawnableWidth)
+        if sideSelector == 1:
+            #top
+            x = random.randint(-(minDistanceFromEdge + spawnableWidth), SETUP.WIDTH + minDistanceFromEdge + spawnableWidth)
+            y = random.randint(-(minDistanceFromEdge + spawnableWidth), -minDistanceFromEdge)
+        if sideSelector == 2:
+            #right side
+            x = random.randint(SETUP.WIDTH + minDistanceFromEdge, SETUP.WIDTH + minDistanceFromEdge + spawnableWidth)
+            y = random.randint(-(minDistanceFromEdge + spawnableWidth), SETUP.HEIGHT + minDistanceFromEdge + spawnableWidth)
+        if sideSelector == 3:
+            #bottom
+            x = random.randint(-(minDistanceFromEdge + spawnableWidth), SETUP.WIDTH + minDistanceFromEdge + spawnableWidth)
+            y = random.randint(SETUP.HEIGHT + minDistanceFromEdge, SETUP.HEIGHT + minDistanceFromEdge + spawnableWidth)
+        return (x, y)
 
     def warp(self):
         self.data["canCollide"] = False
-
-        #generate point of pass through - center for now 
+        #generate point of pass through 
         cx = random.randrange(50, SETUP.WIDTH - 50)
         cy = random.randrange(50, SETUP.HEIGHT - 50)
 
-        sx = random.randint(-100, 0)
-        sy = random.randint(-100, SETUP.HEIGHT + 100)
+        sx, sy = Planet.generateRandomStart()
 
         self.data["position"]["x"] = sx 
         self.data["position"]["y"] = sy
         #this will find us a center location that does not collide with anything else
-        while self.wouldBeColliding():
+        while self.wouldBeCollidingSoon():
             #pick random starting location - only from the left and right for now 
-            sx = random.randint(-100, 0)
-            sy = random.randint(-100, SETUP.HEIGHT + 100)
+            sx, sy = Planet.generateRandomStart()
 
             self.data["position"]["x"] = sx 
             self.data["position"]["y"] = sy
 
-        
-    
         #distance from start point1 to pass through location
         dc1 = math.sqrt((cx - sx)**2 + (cy - sy)**2)
 
@@ -172,23 +225,24 @@ class Planet:
             return True
 
     def render(self, surface):
-        pygame.draw.circle(surface, (0,0,0), (self.data["position"]["x"],self.data["position"]["y"]), self.data["radius"])
+        pygame.draw.circle(surface, self.data["color"], (self.data["position"]["x"],self.data["position"]["y"]), self.data["radius"])
 
     @classmethod
     def generatePlanets(cls, count):
+        #TODO: make this use the logic for warp and check if shit is gonna be colliding before making planets
         i = 0
         while i<count:
             xpos = random.randrange(0, SETUP.WIDTH)
             ypos = random.randrange(0, SETUP.HEIGHT)
             xvel = random.randrange(-SETUP.MAXSPEED, SETUP.MAXSPEED)
             yvel = random.randrange(-SETUP.MAXSPEED, SETUP.MAXSPEED)
-            r =  r1 = random.randrange(20, 100)
+            r = random.randrange(20, 100)
             Planet({"radius": r, "position": {"x": xpos, "y": ypos}, "velocity": {"x": xvel, "y": yvel}})
             i+=1
         
     @classmethod
     def generatePlanetsThatWillCollide(cls):
-
+        #TODO: make this use the logic for warp and check if shit is gonna be colliding before making planets
         #random radii
         r1 = random.randrange(20, 100)
         r2 = random.randrange(20, 100)
@@ -196,11 +250,11 @@ class Planet:
         cx = random.randrange(50, SETUP.WIDTH - 50)
         cy = random.randrange(50, SETUP.HEIGHT - 50)
         #pick random starting locations - only from the left and right for now 
-        sx1 = random.randint(-50, 0)
-        sx2 = random.randint(SETUP.WIDTH, SETUP.WIDTH+50)
+        sx1 = random.randint(-1000, 0)
+        sx2 = random.randint(SETUP.WIDTH, SETUP.WIDTH+1000)
 
-        sy1 = random.randint(0, SETUP.HEIGHT)
-        sy2 = random.randint(0, SETUP.HEIGHT)
+        sy1 = random.randint(-1000, SETUP.HEIGHT+1000)
+        sy2 = random.randint(-1000, SETUP.HEIGHT+1000)
         
         #distance from start point1 to collision location
         dc1 = math.sqrt((cx - sx1)**2 + (cy - sy1)**2)
