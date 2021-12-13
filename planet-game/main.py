@@ -7,7 +7,7 @@ pygame.init()
 
 timer_event = pygame.USEREVENT + 1
 pygame.time.set_timer(timer_event, math.floor(1000/SETUP.FPS))
-Planet.generatePlanets(8)
+Planet.generatePlanets(3)
 Planet.generatePlanetsThatWillCollide()
 
 def draw_window():
@@ -35,4 +35,5 @@ def main():
     pygame.quit()
 
 main()
+
 
