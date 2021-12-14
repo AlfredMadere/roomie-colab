@@ -17,6 +17,9 @@ class Planet:
         self.data["mass"] = (4/3)*(math.pi)*(self.data["radius"]**2)
         self.data["canCollide"] = True
         self.data["color"] = (0,0,0)
+        self.velocity = pygame.math.Vector2(self.data["velocity"]["x"], self.data["velocity"]["y"])
+        self.momentum = self.velocity*self.data["mass"]
+        self.energy = .5*self.data["mass"]*self.velocity.magnitude()**2
         Planet.planets.append(self)
 
 
@@ -50,26 +53,15 @@ class Planet:
     def nearlyOverlaps (self, other):
         buffer = 50
         return Planet.distanceBetweenSquared(self, other) < (self.data["radius"] + other.data["radius"] + buffer)**2 
-
-    def velocity (self):
-        return math.sqrt(self.data["velocity"]["x"]**2 + self.data["velocity"]["y"]**2)
-
-    def momentum (self):
-        return self.velocity()*self.data["mass"]
-
-    def energy (self):
-        return (self.data["mass"]*self.velocity()**2)/2
     
     def doCollision(self, other):
-        #TODO:
-        '''Momentum (and probably energy) not being conserved, figure out what the fuck is wrong and fix it'''
+        
         # I got lazy and got this formula from here: https://ericleong.me/research/circle-circle/
         #use these for testing with initial and final velocities to see if everything is conserved properly
-        #totalMomentum = self.momentum() + other.momentum() #write a momentum method
-        pinitial1 = self.momentum()
-        pinitial2 = other.momentum()
+        pinitial1 = self.momentum
+        pinitial2 = other.momentum
+        einitialtotal = self.energy + other.energy
         pinitialtotal = pinitial1 + pinitial2
-        #print("inital momentum " + str(pinitialtotal))
 
         #TODO fix this method so that energy and momentum are actually conserved and not "kinda conserved" right now the system can loose up to like 5% of its momentum in a collision
         distanceBetween = math.sqrt(Planet.distanceBetweenSquared(self, other))
@@ -93,10 +85,22 @@ class Planet:
         other.data["velocity"]["x"] = vxOtherFinal
         other.data["velocity"]["y"] = vyOtherFinal
         
-        pfinal1 = self.momentum()
-        pfinal2 = other.momentum()
+        pfinal1 = self.momentum
+        pfinal2 = other.momentum
         pfinaltotal = pfinal1 + pfinal2
-        #print("final momentum " + str(pfinaltotal))
+        pdiffmag = (pinitialtotal - pfinaltotal).magnitude()
+        efinaltotal = self.energy + other.energy
+
+        #this doesn't ever seem to be a problem
+        if pdiffmag>pinitialtotal.magnitude()/10000:
+            print("momentum was not conserved, diff: " + str(pdiffmag))
+            self.data["color"] = (0, 255, 0)
+            other.data["color"] = (0, 255, 0)
+        if abs(einitialtotal - efinaltotal)>einitialtotal/10000:
+            print("energy was not conserved, diff: " + str(einitialtotal-efinaltotal))
+            self.data["color"] = (0, 0, 255)
+            other.data["color"] = (0, 0, 255)
+
         #This lowkey is such a hack and we should change it, this is because they might still be inside each other after 1 redraw frame... and then it will look like they collided again and we will get weird shit happening
         while Planet.distanceBetweenSquared(self, other) < (self.data["radius"] + other.data["radius"])**2:
             self.updatePosition()
