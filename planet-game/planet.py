@@ -7,21 +7,45 @@ import setup as SETUP
 
 DENSITY = 1
 
-class Planet:
+class Planet(pygame.sprite.Sprite):
+    minRadius, maxRadius = [50, 100]
     planets = []
+    planetStyles = {
+        "bigPlanets": ["./planet-game/assets/planets/green_planet.jpeg"],
+        "mediumPlanets": ["./planet-game/assets/planets/orange_planet.jpeg"],
+        "smallPlanets": ["./planet-game/assets/planets/volcano_planet.jpeg"],
+        "miscPlanets": ["./planet-game/assets/planets/stripey_brown.jpeg"]
+    }
     closePlanets = []
     def __init__(self, data):
+        pygame.sprite.Sprite.__init__(self)
         #TODO: update so that there is no "data" attribute with all the data, that is stupid. Just make them all the data members, attributes of the class
         self.data = data
         self.dragCoefficent = SETUP.DRAG
         self.data["mass"] = (4/3)*(math.pi)*(self.data["radius"]**2)
         self.data["canCollide"] = True
         self.data["color"] = (0,0,0)
+        self.image = pygame.transform.scale(pygame.image.load(self.getPlanetStyle()), (self.data["radius"]*2, self.data["radius"]*2))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = self.data["position"]["x"]
+        self.rect.centery = self.data["position"]["y"]
         self.velocity = pygame.math.Vector2(self.data["velocity"]["x"], self.data["velocity"]["y"])
         self.momentum = self.velocity*self.data["mass"]
         self.energy = .5*self.data["mass"]*self.velocity.magnitude()**2
         Planet.planets.append(self)
 
+    def getPlanetStyle(self):
+        #TODO this is a dumb way to select sizes of planets, use difference in range instead
+        r = self.data["radius"]
+        if r > Planet.maxRadius*.8:
+            return Planet.planetStyles["bigPlanets"][random.randint(0, len(Planet.planetStyles["bigPlanets"]) - 1)]
+        elif r > Planet.maxRadius*.4 and r < Planet.maxRadius *.8 :
+            return Planet.planetStyles["mediumPlanets"][random.randint(0, len(Planet.planetStyles["mediumPlanets"]) - 1)]
+        elif r > Planet.minRadius and r < Planet.maxRadius*.4:
+            return Planet.planetStyles["smallPlanets"][random.randint(0, len(Planet.planetStyles["smallPlanets"]) - 1)]
+        else:
+            print("planet size out of range")
+            return Planet.planetStyles["smallPlanets"][0]
 
     def notInEffectiveScreen(self):
         buffer = 200
@@ -96,10 +120,14 @@ class Planet:
             print("momentum was not conserved, diff: " + str(pdiffmag))
             self.data["color"] = (0, 255, 0)
             other.data["color"] = (0, 255, 0)
+        else: 
+            print("momentum was conserved, diff: " + str(pdiffmag))
         if abs(einitialtotal - efinaltotal)>einitialtotal/10000:
             print("energy was not conserved, diff: " + str(einitialtotal-efinaltotal))
             self.data["color"] = (0, 0, 255)
             other.data["color"] = (0, 0, 255)
+        else: 
+            print("energy was conserved, diff: " + str(einitialtotal-efinaltotal))
 
         #This lowkey is such a hack and we should change it, this is because they might still be inside each other after 1 redraw frame... and then it will look like they collided again and we will get weird shit happening
         while Planet.distanceBetweenSquared(self, other) < (self.data["radius"] + other.data["radius"])**2:
@@ -229,7 +257,10 @@ class Planet:
             return True
 
     def render(self, surface):
-        pygame.draw.circle(surface, self.data["color"], (self.data["position"]["x"],self.data["position"]["y"]), self.data["radius"])
+        self.rect.centerx = self.data["position"]["x"]
+        self.rect.centery = self.data["position"]["y"]
+        surface.blit(self.image, self.rect)
+        #pygame.draw.circle(surface, self.data["color"], (self.data["position"]["x"],self.data["position"]["y"]), self.data["radius"])
 
     @classmethod
     def generatePlanets(cls, count):
