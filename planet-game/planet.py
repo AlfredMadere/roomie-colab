@@ -11,10 +11,10 @@ class Planet(pygame.sprite.Sprite):
     minRadius, maxRadius = [50, 100]
     planets = []
     planetStyles = {
-        "bigPlanets": ["./planet-game/assets/planets/green_planet.jpeg"],
-        "mediumPlanets": ["./planet-game/assets/planets/orange_planet.jpeg"],
-        "smallPlanets": ["./planet-game/assets/planets/volcano_planet.jpeg"],
-        "miscPlanets": ["./planet-game/assets/planets/stripey_brown.jpeg"]
+        "bigPlanets": ["./planet-game/assets/planets/green_planet.png"],
+        "mediumPlanets": ["./planet-game/assets/planets/orange_planet.png"],
+        "smallPlanets": ["./planet-game/assets/planets/volcano_planet.png"],
+        "miscPlanets": ["./planet-game/assets/planets/stripey_brown.png"]
     }
     closePlanets = []
     def __init__(self, data):
@@ -25,10 +25,11 @@ class Planet(pygame.sprite.Sprite):
         self.data["mass"] = (4/3)*(math.pi)*(self.data["radius"]**2)
         self.data["canCollide"] = True
         self.data["color"] = (0,0,0)
-        self.image = pygame.transform.scale(pygame.image.load(self.getPlanetStyle()), (self.data["radius"]*2, self.data["radius"]*2))
+        self.image = pygame.transform.scale(pygame.image.load(self.getPlanetStyle()).convert_alpha(), (self.data["radius"]*2, self.data["radius"]*2))
         self.rect = self.image.get_rect()
         self.rect.centerx = self.data["position"]["x"]
         self.rect.centery = self.data["position"]["y"]
+        self.pos = pygame.Vector2(self.data["position"]["x"], self.data["position"]["y"])
         self.velocity = pygame.math.Vector2(self.data["velocity"]["x"], self.data["velocity"]["y"])
         self.momentum = self.velocity*self.data["mass"]
         self.energy = .5*self.data["mass"]*self.velocity.magnitude()**2
