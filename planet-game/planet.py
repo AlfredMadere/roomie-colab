@@ -24,11 +24,10 @@ class Planet(pygame.sprite.Sprite):
         self.dragCoefficent = SETUP.DRAG
         self.data["mass"] = (4/3)*(math.pi)*(self.data["radius"]**2)
         self.data["canCollide"] = True
-        self.data["color"] = (0,0,0)
+        self.data["color"] = (255,0,0)
         self.image = pygame.transform.scale(pygame.image.load(self.getPlanetStyle()).convert_alpha(), (self.data["radius"]*2, self.data["radius"]*2))
         self.rect = self.image.get_rect()
-        self.rect.centerx = self.data["position"]["x"]
-        self.rect.centery = self.data["position"]["y"]
+        self.rect.center = (self.data["position"]["x"], self.data["position"]["y"])
         self.pos = pygame.Vector2(self.data["position"]["x"], self.data["position"]["y"])
         self.velocity = pygame.math.Vector2(self.data["velocity"]["x"], self.data["velocity"]["y"])
         self.momentum = self.velocity*self.data["mass"]
@@ -148,8 +147,11 @@ class Planet(pygame.sprite.Sprite):
     def updatePosition(self):
         #update x pos
         self.data["position"]["x"] += self.data["velocity"]["x"]
+        self.pos.x += self.data["velocity"]["x"]
         #update y pos
         self.data["position"]["y"] += self.data["velocity"]["y"]
+        self.pos.y += self.data["velocity"]["y"]
+
         #update x and y vel
         #instantaniousDrag = self.drag()
         instantaniousDrag = 0
@@ -260,8 +262,8 @@ class Planet(pygame.sprite.Sprite):
     def render(self, surface):
         self.rect.centerx = self.data["position"]["x"]
         self.rect.centery = self.data["position"]["y"]
-        surface.blit(self.image, self.rect)
-        #pygame.draw.circle(surface, self.data["color"], (self.data["position"]["x"],self.data["position"]["y"]), self.data["radius"])
+        #surface.blit(self.image, self.rect)
+        pygame.draw.circle(surface, self.data["color"], (self.data["position"]["x"],self.data["position"]["y"]), self.data["radius"])
 
     @classmethod
     def generatePlanets(cls, count):

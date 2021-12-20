@@ -20,11 +20,9 @@ def draw_window():
     SETUP.WIN.blit(BackGround.image, BackGround.rect)
     Planet.doCollisions()
     Planet.updatePositions()
-    player1.handleControls()
-    player1.updatePosition()
+    player1.doAll(SETUP.WIN)
     for planet in Planet.planets:
         planet.render(SETUP.WIN)
-    player1.render(SETUP.WIN)
     pygame.display.update()
 
     
