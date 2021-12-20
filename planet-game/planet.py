@@ -11,10 +11,10 @@ class Planet(pygame.sprite.Sprite):
     minRadius, maxRadius = [50, 100]
     planets = []
     planetStyles = {
-        "bigPlanets": ["./planet-game/assets/planets/green_planet.jpeg"],
-        "mediumPlanets": ["./planet-game/assets/planets/orange_planet.jpeg"],
-        "smallPlanets": ["./planet-game/assets/planets/volcano_planet.jpeg"],
-        "miscPlanets": ["./planet-game/assets/planets/stripey_brown.jpeg"]
+        "bigPlanets": ["./planet-game/assets/planets/green_planet.png"],
+        "mediumPlanets": ["./planet-game/assets/planets/orange_planet.png"],
+        "smallPlanets": ["./planet-game/assets/planets/volcano_planet.png"],
+        "miscPlanets": ["./planet-game/assets/planets/stripey_brown.png"]
     }
     closePlanets = []
     def __init__(self, data):
@@ -24,11 +24,11 @@ class Planet(pygame.sprite.Sprite):
         self.dragCoefficent = SETUP.DRAG
         self.data["mass"] = (4/3)*(math.pi)*(self.data["radius"]**2)
         self.data["canCollide"] = True
-        self.data["color"] = (0,0,0)
-        self.image = pygame.transform.scale(pygame.image.load(self.getPlanetStyle()), (self.data["radius"]*2, self.data["radius"]*2))
+        self.data["color"] = (255,0,0)
+        self.image = pygame.transform.scale(pygame.image.load(self.getPlanetStyle()).convert_alpha(), (self.data["radius"]*2, self.data["radius"]*2))
         self.rect = self.image.get_rect()
-        self.rect.centerx = self.data["position"]["x"]
-        self.rect.centery = self.data["position"]["y"]
+        self.rect.center = (self.data["position"]["x"], self.data["position"]["y"])
+        self.pos = pygame.Vector2(self.data["position"]["x"], self.data["position"]["y"])
         self.velocity = pygame.math.Vector2(self.data["velocity"]["x"], self.data["velocity"]["y"])
         self.momentum = self.velocity*self.data["mass"]
         self.energy = .5*self.data["mass"]*self.velocity.magnitude()**2
@@ -120,14 +120,10 @@ class Planet(pygame.sprite.Sprite):
             print("momentum was not conserved, diff: " + str(pdiffmag))
             self.data["color"] = (0, 255, 0)
             other.data["color"] = (0, 255, 0)
-        else: 
-            print("momentum was conserved, diff: " + str(pdiffmag))
         if abs(einitialtotal - efinaltotal)>einitialtotal/10000:
             print("energy was not conserved, diff: " + str(einitialtotal-efinaltotal))
             self.data["color"] = (0, 0, 255)
             other.data["color"] = (0, 0, 255)
-        else: 
-            print("energy was conserved, diff: " + str(einitialtotal-efinaltotal))
 
         #This lowkey is such a hack and we should change it, this is because they might still be inside each other after 1 redraw frame... and then it will look like they collided again and we will get weird shit happening
         while Planet.distanceBetweenSquared(self, other) < (self.data["radius"] + other.data["radius"])**2:
@@ -147,8 +143,11 @@ class Planet(pygame.sprite.Sprite):
     def updatePosition(self):
         #update x pos
         self.data["position"]["x"] += self.data["velocity"]["x"]
+        self.pos.x = self.data["position"]["x"]
         #update y pos
         self.data["position"]["y"] += self.data["velocity"]["y"]
+        self.pos.y = self.data["position"]["y"]
+
         #update x and y vel
         #instantaniousDrag = self.drag()
         instantaniousDrag = 0
@@ -264,7 +263,7 @@ class Planet(pygame.sprite.Sprite):
 
     @classmethod
     def generatePlanets(cls, count):
-        #TODO: make this use the logic for warp and check if shit is gonna be colliding before making planets
+        #Depricated
         i = 0
         while i<count:
             xpos = random.randrange(0, SETUP.WIDTH)
