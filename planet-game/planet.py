@@ -259,7 +259,6 @@ class Planet(pygame.sprite.Sprite):
         self.rect.centerx = self.data["position"]["x"]
         self.rect.centery = self.data["position"]["y"]
         surface.blit(self.image, self.rect)
-        #pygame.draw.circle(surface, self.data["color"], (self.data["position"]["x"],self.data["position"]["y"]), self.data["radius"])
 
     @classmethod
     def generatePlanets(cls, count):
@@ -275,48 +274,61 @@ class Planet(pygame.sprite.Sprite):
             i+=1
         
     @classmethod
-    def generatePlanetsThatWillCollide(cls):
-        #TODO: make this use the logic for warp and check if shit is gonna be colliding before making planets
-        #random radii
-        r1 = random.randrange(20, 100)
-        r2 = random.randrange(20, 100)
-        #generate point of collision 
-        cx = random.randrange(50, SETUP.WIDTH - 50)
-        cy = random.randrange(50, SETUP.HEIGHT - 50)
-        #pick random starting locations - only from the left and right for now 
-        sx1 = random.randint(-1000, 0)
-        sx2 = random.randint(SETUP.WIDTH, SETUP.WIDTH+1000)
+    def generatePlanetsThatWillCollide(cls, numPairs):
+        while numPairs > 0:
+            r1 = random.randrange(20, 100)
+            r2 = random.randrange(20, 100)
 
-        sy1 = random.randint(-1000, SETUP.HEIGHT+1000)
-        sy2 = random.randint(-1000, SETUP.HEIGHT+1000)
+            cx = random.randrange(50, SETUP.WIDTH - 50)
+            cy = random.randrange(50, SETUP.HEIGHT - 50)
+
+            s1x, s1y = Planet.generateRandomStart()
+            s2x, s2y = Planet.generateRandomStart()
+
+
+            planet1 = Planet({"radius": r1, "position": {"x": s1x, "y": s1y}, "velocity": {"x": 0, "y": 0}})
+            planet2 = Planet({"radius": r2, "position": {"x": s2x, "y": s2y}, "velocity": {"x": 0, "y": 0}})
+
+            #this will find us a center location that does not collide with anything else
+            while planet1.wouldBeCollidingSoon():
+                #pick random starting location - only from the left and right for now 
+                s1x, s1y = Planet.generateRandomStart()
+                planet1.data["position"]["x"] = s1x 
+                planet1.data["position"]["y"] = s1y
+
+            while planet2.wouldBeCollidingSoon():
+                #pick random starting location - only from the left and right for now 
+                s2x, s2y = Planet.generateRandomStart()
+                planet2.data["position"]["x"] = s2x 
+                planet2.data["position"]["y"] = s2y
+
+            #distance from start point1 to pass through location
+            dc1 = math.sqrt((cx - s1x)**2 + (cy - s1y)**2)
+            dc2 = math.sqrt((cx - s2x)**2 + (cy - s2y)**2)
+
+            #random velocity within range for planet 
+            v1mag = random.randrange(2, SETUP.MAXSPEED)
+            timeToCollision = dc1/v1mag
+            #velocity that will make the planet2 arrive at collision site at the same time as planet1 
+            v2mag = dc2/timeToCollision
+            #n is a unit vector from start start point to pass through point
+            nx = (cx - s1x) / dc1
+            ny = (cy - s1y) / dc1
+            ax = (cx - s2x) / dc2
+            ay = (cy - s2y) / dc2
         
-        #distance from start point1 to collision location
-        dc1 = math.sqrt((cx - sx1)**2 + (cy - sy1)**2)
+            #components of unit vector times magnitude of velocity give components of velocity
+            xvel1 = v1mag * nx
+            yvel1 = v1mag * ny
+            xvel2 = v2mag * ax
+            yvel2 = v2mag * ay
 
-        #distance from start point2 to collision location
-        dc2 = math.sqrt((cx - sx2)**2 + (cy - sy2)**2)
-
-        #random velocity within range for first planet - this will determine how fast the second planet has to move
-        v1mag = random.randrange(2, SETUP.MAXSPEED)
-        #time to collison d/r =t
-        timeToCollision = dc1/v1mag
-        #velocity that will make the planet2 arrive at collision site at the same time as planet1 
-        v2mag = dc2/timeToCollision
-        
-        #n is a unit vector from start point1 to collision
-        nx = (cx - sx1) / dc1
-        ny = (cy - sy1) / dc1
-        #a is a unit vector from start point2 to collison
-        ax = (cx - sx2) / dc2
-        ay = (cy - sy2) / dc2
-        #components of unit vector times magnitude of velocity give components of velocity
-        xvel1 = v1mag * nx
-        yvel1 = v1mag * ny
-        xvel2 = v2mag * ax
-        yvel2 = v2mag * ay
-
-        return [Planet({"radius": r1, "position": {"x": sx1, "y": sy1}, "velocity": {"x": xvel1, "y": yvel1}}),
-        Planet({"radius": r2, "position": {"x": sx2, "y": sy2}, "velocity": {"x": xvel2, "y": yvel2}})]
+            planet1.data["velocity"]["x"] = xvel1
+            planet1.data["velocity"]["y"] = yvel1
+            planet2.data["velocity"]["x"] = xvel2
+            planet2.data["velocity"]["y"] = yvel2
+            
+            numPairs-=1
 
     @classmethod
     def updatePositions(cls):
